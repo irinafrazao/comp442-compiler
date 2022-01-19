@@ -1,2 +1,5 @@
 # comp442-compiler
-A compiler for a made up language
+Irina Patrocinio-Frazao
+40024714
+
+Compiler project for COMP442
