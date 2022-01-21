@@ -43,11 +43,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Src\Lexical\LexicalAnalyzer.cs" />
+    <Compile Include="Src\Lexical\LexicalUtils.cs" />
+    <Compile Include="Src\Model\LexicalAnalyzerResponse.cs" />
+    <Compile Include="Src\Model\Token.cs" />
+    <Compile Include="Src\Model\TokenType.cs" />
+    <Compile Include="Src\Driver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Src\Input\" />
+    <Folder Include="Src\Output\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
