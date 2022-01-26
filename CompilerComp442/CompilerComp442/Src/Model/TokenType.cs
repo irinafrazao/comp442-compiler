@@ -3,7 +3,9 @@
     // Add here also error types?
     public enum TokenType
     {
-        id,
+        invalidCharacterError,
+        newLineOrTabOrSpaces,
+        identifier,
         intNum,
         floatNum, 
         doubleEquals,
