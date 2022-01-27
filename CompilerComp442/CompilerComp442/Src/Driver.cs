@@ -33,12 +33,7 @@ namespace CompilerComp442.Src
                         System.Console.WriteLine(response.Token.Type + " => " + response.Token.Lexeme);
                     }
 
-                    // this makes sure that the line is entirely tokenized
-                    if (response.RemainderOfInputTextLine.Equals("$"))
-                    {
-                        response.RemainderOfInputTextLine = null;
-                    }
-
+                    //make sure line is entirely tokenized
                 } while (!string.IsNullOrEmpty(response.RemainderOfInputTextLine));
 
                 lineNumber++;

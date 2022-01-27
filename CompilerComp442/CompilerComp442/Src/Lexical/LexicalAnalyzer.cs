@@ -7,30 +7,37 @@ namespace CompilerComp442.Src.Lexical
 {
     public static class LexicalAnalyzer
     {
-        // still need to add OPERATORS AND PUNCTUATION
+        // need to move to a file
+        // move line read inside??
+        // need to finalize test cases
+        // fix spaces and tabs and new lines! (or the 2 files from teacher wont run)
         // still need to deal with COMMENTS
-        // test floats
-        // fixing spaces in middle of lines => just discard them
 
-        public static LexicalAnalyzerResponse ExtractNextToken(string lineOfText, int lineNumber)
+        private static Queue<char> pendingCharacters = new Queue<char>();
+        private static int characterCounter = 0;
+        private static char currentCharacter;
+        private static string lineOfText = "";
+
+        public static LexicalAnalyzerResponse ExtractNextToken(string text, int lineNumber)
         {
-            Queue<char> pendingCharacters = new Queue<char>();
-            var characterCounter = 0;
-
-            // lines could be just white spaces
-            if (string.IsNullOrEmpty(lineOfText) || string.IsNullOrWhiteSpace(lineOfText) || lineOfText.Equals("\t"))
+            // reset static class fields
+            lineOfText = text;
+            pendingCharacters = new Queue<char>();
+            characterCounter = 0;
+            
+            // replace tabs by space AND lines could be just white spaces
+            lineOfText = lineOfText.Replace("/t", " ");
+            if (string.IsNullOrEmpty(lineOfText) || string.IsNullOrWhiteSpace(lineOfText))
             {
                 // final result: new line or tabs or spaces!
                 return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.newLineOrTabOrSpaces);
             }
 
-            if (!lineOfText.Last().Equals('$'))
-            {
-                // used to denote the end of the line
-                lineOfText = lineOfText + "$";
-            }
+            // used to denote the end of the line
+            lineOfText = lineOfText + "$";
 
-            var currentCharacter = lineOfText[characterCounter];
+            // start parsing text
+            currentCharacter = lineOfText[characterCounter];
 
             if (LexicalUtils.IsNonZero(currentCharacter) | currentCharacter.Equals('0'))
             {
@@ -39,84 +46,60 @@ namespace CompilerComp442.Src.Lexical
                 {
                     while (LexicalUtils.IsDigit(currentCharacter))
                     {
-                        pendingCharacters.Enqueue(currentCharacter);
-                        characterCounter++;
-                        currentCharacter = lineOfText[characterCounter];
+                        MoveToFollowingCharacter();
                     }
                 }
                 else
                 {
                     // q3: might be an integer or float
-                    pendingCharacters.Enqueue(currentCharacter);
-                    characterCounter++;
-                    currentCharacter = lineOfText[characterCounter];
+                    MoveToFollowingCharacter();
                 }
                 
                 // q7: might be a float
                 if (currentCharacter.Equals('.'))
                 {
-                    pendingCharacters.Enqueue(currentCharacter);
-                    characterCounter++;
-                    currentCharacter = lineOfText[characterCounter];
+                    MoveToFollowingCharacter();
 
                     while (LexicalUtils.IsDigit(currentCharacter))
                     {
-                        pendingCharacters.Enqueue(currentCharacter);
-                        characterCounter++;
-                        currentCharacter = lineOfText[characterCounter];
+                        MoveToFollowingCharacter();
+
+                        if (currentCharacter.Equals('0'))
+                        {
+                            // final result: its a float!
+                            return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
+                        }
                     }
 
-                    if (LexicalUtils.IsNonZero(currentCharacter) | currentCharacter.Equals('0'))
+                    if (currentCharacter.Equals('e'))
                     {
-                        pendingCharacters.Enqueue(currentCharacter);
-                        characterCounter++;
-                        currentCharacter = lineOfText[characterCounter];
+                        // q12
+                        MoveToFollowingCharacter();
 
-                        if (currentCharacter.Equals('e'))
+                        // optionaly floats could have plus or minus after the exponent
+                        if (currentCharacter.Equals('+') | currentCharacter.Equals('-'))
                         {
-                            // q12
-                            pendingCharacters.Enqueue(currentCharacter);
-                            characterCounter++;
-                            currentCharacter = lineOfText[characterCounter];
+                            MoveToFollowingCharacter();
+                        }
 
-                            if (currentCharacter.Equals('+') | currentCharacter.Equals('-'))
+                        if (currentCharacter.Equals('0'))
+                        {
+                            MoveToFollowingCharacter();
+
+                            // final result q11: its a float!
+                            return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
+                        }
+                        else if (LexicalUtils.IsNonZero(currentCharacter))
+                        {
+                            MoveToFollowingCharacter();
+
+                            while (LexicalUtils.IsDigit(currentCharacter))
                             {
-                                pendingCharacters.Enqueue(currentCharacter);
-                                characterCounter++;
-                                currentCharacter = lineOfText[characterCounter];
-
-                                if (currentCharacter.Equals('0'))
-                                {
-                                    // final result q11: its a float!
-                                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
-                                }
-                                else if (LexicalUtils.IsNonZero(currentCharacter))
-                                {
-                                    pendingCharacters.Enqueue(currentCharacter);
-                                    characterCounter++;
-                                    currentCharacter = lineOfText[characterCounter];
-
-                                    while (LexicalUtils.IsDigit(currentCharacter))
-                                    {
-                                        pendingCharacters.Enqueue(currentCharacter);
-                                        characterCounter++;
-                                        currentCharacter = lineOfText[characterCounter];
-                                    }
-
-                                    // final result q11: its a float!
-                                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter - 1, TokenType.floatNum);
-                                }
-                                else
-                                {
-                                    // final result q11: its a float!
-                                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter - 1, TokenType.floatNum);
-                                }
+                                MoveToFollowingCharacter();
                             }
-                            else
-                            {
-                                // final result q11: its a float!
-                                return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
-                            }
+
+                            // final result q11: its a float!
+                            return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
                         }
                         else
                         {
@@ -126,7 +109,7 @@ namespace CompilerComp442.Src.Lexical
                     }
                     else
                     {
-                        // final result: its a float!
+                        // final result q11: its a float!
                         return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
                     }
                 }
@@ -140,16 +123,12 @@ namespace CompilerComp442.Src.Lexical
             else if (LexicalUtils.IsLetter(currentCharacter))
             {
                 //q1: might be an id
-                pendingCharacters.Enqueue(currentCharacter);
-                characterCounter++;
-                currentCharacter = lineOfText[characterCounter];
+                MoveToFollowingCharacter();
 
                 // q4, q5, q6 still might be ids
                 while (LexicalUtils.IsLetter(currentCharacter) | LexicalUtils.IsDigit(currentCharacter) | currentCharacter.Equals('_'))
                 {
-                    pendingCharacters.Enqueue(currentCharacter);
-                    characterCounter++;
-                    currentCharacter = lineOfText[characterCounter];
+                    MoveToFollowingCharacter();
                 }
 
                 // could be a reserved word
@@ -168,14 +147,42 @@ namespace CompilerComp442.Src.Lexical
             }
             else
             {
-                // final result: error invalid character!
-                return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.invalidCharacterError);
+                // character is part of an operator or punctuation
+                if (LexicalUtils.IsOperatorsOrPunctuation(currentCharacter.ToString()))
+                {
+                    // might be a 2 character operator or punctuation substring
+                    MoveToFollowingCharacter();
+
+                    if (LexicalUtils.IsOperatorsOrPunctuation(currentCharacter.ToString()))
+                    {
+                        MoveToFollowingCharacter();
+                    }
+
+                    // final result: one or two character operator or punctuation!
+                    var operatorOrPunctuationType = LexicalUtils.GetTokenTypeForOperatorsOrPunctuation
+                        (new string(pendingCharacters.ToArray<char>())).Value;
+
+                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, operatorOrPunctuationType);
+                }
+                else
+                {
+                    MoveToFollowingCharacter();
+
+                    // final result: error invalid character!
+                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.invalidCharacterError);
+                }
             }
         }
 
         private static LexicalAnalyzerResponse BuildResponse(Queue<char> pendingCharacters, int lineNumber,
             string lineOfText, int characterCounter, TokenType tokenType)
         {
+            // take out the $ that we added previously to denote the end of the string
+            if (lineOfText.Contains("$"))
+            {
+                lineOfText = lineOfText.Remove(lineOfText.Length - 1, 1);
+            }
+            
             return new LexicalAnalyzerResponse
             {
                 Token = new Token
@@ -186,6 +193,13 @@ namespace CompilerComp442.Src.Lexical
                 },
                 RemainderOfInputTextLine = lineOfText.Remove(0, characterCounter)
             };
+        }
+
+        private static void MoveToFollowingCharacter()
+        {
+            pendingCharacters.Enqueue(currentCharacter);
+            characterCounter++;
+            currentCharacter = lineOfText[characterCounter];
         }
     }
 }

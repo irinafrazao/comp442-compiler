@@ -5,6 +5,77 @@ namespace CompilerComp442.Src.Lexical
 {
     public static class LexicalUtils
     {
+        public static bool IsOperatorsOrPunctuation(string text)
+        {
+            List<string> operatorsOrPunctuation = new List<string>{
+                "==", "<>", "<", ">", "<=", ">=", "+", "-",
+                "*", "/", "=", "|", "&", "!", "(", ")", "{", "}", "[", "]",
+                ";", ",", ".", ":", "::", "->" };
+
+            return operatorsOrPunctuation.Contains(text);
+        }
+
+        public static TokenType? GetTokenTypeForOperatorsOrPunctuation(string text)
+        {
+            switch (text)
+            {
+                case "==":
+                    return TokenType.doubleEquals;
+                case "<>":
+                    return TokenType.openAndCloseAngledBrackets;
+                case "<":
+                    return TokenType.openAngledBracket;
+                case ">":
+                    return TokenType.closedAngledBracket;
+                case "<=":
+                    return TokenType.lessThanOrEquals;
+                case ">=":
+                    return TokenType.greaterThanOrEquals;
+                case "+":
+                    return TokenType.plus;
+                case "-":
+                    return TokenType.minus;
+                case "*":
+                    return TokenType.star;
+                case "/":
+                    return TokenType.slash;
+                case "=":
+                    return TokenType.equal;
+                case "|":
+                    return TokenType.pipe;
+                case "&":
+                    return TokenType.ampersand;
+                case "!":
+                    return TokenType.exclamationMark;
+                case "(":
+                    return TokenType.openParenthesis;
+                case ")":
+                    return TokenType.closedParenthesis;
+                case "{":
+                    return TokenType.openCurlyBrace;
+                case "}":
+                    return TokenType.closedCurlyBrace;
+                case "[":
+                    return TokenType.openSquareBracket;
+                case "]":
+                    return TokenType.closedSquareBracket;
+                case ";":
+                    return TokenType.semicolon;
+                case ",":
+                    return TokenType.comma;
+                case ".":
+                    return TokenType.period;
+                case ":":
+                    return TokenType.colon;
+                case "::":
+                    return TokenType.doubleColon;
+                case "->":
+                    return TokenType.arrow;
+                default:
+                    return null;
+            }
+        }
+
         public static bool IsReservedWord(string text)
         {
             List<string> keywords = new List<string>{
