@@ -7,12 +7,6 @@ namespace CompilerComp442.Src.Lexical
 {
     public static class LexicalAnalyzer
     {
-        // COMMENTS: doesnt support multiple lines block comments and imbricated block comments
-        // NICE TO HAVE: print files each line number on same line
-
-        // move line read inside??
-        // make document!
-
         private static Stack<char> pendingCharacters = new Stack<char>();
         private static int characterCounter = 0;
         private static char currentCharacter;

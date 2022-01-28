@@ -150,12 +150,5 @@ namespace CompilerComp442.Src.Lexical
             // [1-9]
             return IsDigit(character) && !character.Equals('0');
         }
-
-        // use to simplify?????
-        public static bool IsAlphaNum(char character)
-        {
-            // letter or digit or underscore
-            return IsLetter(character) || IsDigit(character) || character.Equals('_');
-        }
     }
 }
