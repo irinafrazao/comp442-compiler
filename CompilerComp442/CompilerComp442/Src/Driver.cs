@@ -1,46 +1,63 @@
 ﻿using CompilerComp442.Src.Lexical;
 using CompilerComp442.Src.Model;
-using System;
 using System.IO;
 
 namespace CompilerComp442.Src
 {
     public class Driver
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             // ASSIGNMENT 1 - tokenize input file using lexical analyzer
+            PrintFilesFromLexicalAnalyzer("lexpositivegrading");
+            PrintFilesFromLexicalAnalyzer("lexnegativegrading");
+            PrintFilesFromLexicalAnalyzer("lexicaltest1");
+        }
 
-            //test case 1 - lexpositivegrading.src
+        private static void PrintFilesFromLexicalAnalyzer(string filenameWithoutExtension)
+        {
             string inputDirectory = System.IO.Path.GetFullPath(@"..\..\Src\Input\");
-            string filepath = Path.Combine(inputDirectory, "lexpositivegrading.src");
+            string outputDirectory = System.IO.Path.GetFullPath(@"..\..\Src\Output\");
+            string filepath = Path.Combine(inputDirectory, filenameWithoutExtension + ".src");
 
             string[] textLines = System.IO.File.ReadAllLines(filepath);
 
-            int lineNumber = 1;
-            foreach(var line in textLines)
+            using (StreamWriter fileOutTokens = new StreamWriter(Path.Combine(outputDirectory, filenameWithoutExtension + ".outlextokens")),
+                                fileOutErrors = new StreamWriter(Path.Combine(outputDirectory, filenameWithoutExtension + ".outlexerrors")))
             {
-                LexicalAnalyzerResponse response = new LexicalAnalyzerResponse { RemainderOfInputTextLine = line };
-
-                do
+                int lineNumber = 1;
+                foreach (var line in textLines)
                 {
-                    // send line to lexical analyzer
-                    response = LexicalAnalyzer.ExtractNextToken(response.RemainderOfInputTextLine, lineNumber);
+                    LexicalAnalyzerResponse response = new LexicalAnalyzerResponse { RemainderOfInputTextLine = line };
 
-                    // write token to file here (good tokens and errors)
-                    if (!response.Token.Type.Equals(TokenType.newLineOrTabOrSpaces))
+                    do
                     {
-                        System.Console.WriteLine(response.Token.Type + " => " + response.Token.Lexeme);
-                    }
+                        // send line to lexical analyzer
+                        response = LexicalAnalyzer.ExtractNextToken(response.RemainderOfInputTextLine, lineNumber);
 
-                    //make sure line is entirely tokenized
-                } while (!string.IsNullOrEmpty(response.RemainderOfInputTextLine));
+                        // write token to file here (good tokens and errors)
+                        if (response != null)
+                        {
+                            var outputLine = "[" + response.Token.Type + ", " + response.Token.Lexeme
+                                + ", " + response.Token.LineNumber + "]";
 
-                lineNumber++;
+                            if (response.Token.Type.Equals(TokenType.invalidCharacterError))
+                            {
+                                fileOutTokens.WriteLine(outputLine);
+                                fileOutErrors.WriteLine(outputLine);
+                            }
+                            else
+                            {
+                                fileOutTokens.WriteLine(outputLine);
+                            }
+                        }
+
+                        //make sure line is entirely tokenized
+                    } while (response != null && !string.IsNullOrEmpty(response.RemainderOfInputTextLine));
+
+                    lineNumber++;
+                }
             }
-
-            // so the console program doesnt close when its done running
-            Console.Read();
         }
     }
 }

@@ -7,9 +7,8 @@ namespace CompilerComp442.Src.Lexical
 {
     public static class LexicalAnalyzer
     {
-        // need to move to a file
-        // still need to deal with COMMENTS
-        // fix spaces and tabs and new lines! (or the 2 files from teacher wont run)
+        // COMMENTS: doesnt support multiple lines block comments and imbricated block comments
+        // NICE TO HAVE: print files each line number on same line
 
         // move line read inside??
         // make document!
@@ -27,14 +26,13 @@ namespace CompilerComp442.Src.Lexical
             characterCounter = 0;
             
             // cleanup tab and leading and trailing white spaces
-            lineOfText = lineOfText.Replace("/t", " ");
-            lineOfText.Trim();
+            lineOfText = lineOfText.Trim();
 
             // lines could be just white spaces
             if (string.IsNullOrEmpty(lineOfText) || string.IsNullOrWhiteSpace(lineOfText))
             {
-                // final result: new line or tabs or spaces!
-                return BuildResponse(pendingCharacters, lineNumber, lineOfText, lineOfText.Length, TokenType.newLineOrTabOrSpaces);
+                // final result: ignore this line because it was empty
+                return null;
             }
 
             // used to denote the end of the line
@@ -188,6 +186,40 @@ namespace CompilerComp442.Src.Lexical
                         {
                             // 2 character operator or punctuation!
                             tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, operatorTypeToTest.Value);
+                        }
+                        else
+                        {
+                            // could be comments
+                            var strToCheck = MakeStringOutOfCharStack(pendingCharacters);
+
+                            // single line comment
+                            if (strToCheck.Equals("//"))
+                            {
+                                while (characterCounter < lineOfText.Length - 1)
+                                {
+                                    StackAndMoveToNextCharacter();
+                                }
+                                tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.inlineComment);
+                            }
+                            else if(strToCheck.Equals("/*"))
+                            {
+                                while (characterCounter < lineOfText.Length - 1)
+                                {
+                                    StackAndMoveToNextCharacter();
+
+                                    if (currentCharacter.Equals('*'))
+                                    {
+                                        StackAndMoveToNextCharacter();
+
+                                        if (currentCharacter.Equals('/'))
+                                        {
+                                            StackAndMoveToNextCharacter();
+                                            tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.blockComment);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 

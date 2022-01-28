@@ -4,7 +4,8 @@
     public enum TokenType
     {
         invalidCharacterError,
-        newLineOrTabOrSpaces,
+        inlineComment,
+        blockComment,
         identifier,
         intNum,
         floatNum, 

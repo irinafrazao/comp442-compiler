@@ -1,0 +1,8 @@
+[invalidCharacterError, @, 1]
+[invalidCharacterError, #, 1]
+[invalidCharacterError, $, 1]
+[invalidCharacterError, ', 1]
+[invalidCharacterError, \, 1]
+[invalidCharacterError, ~, 1]
+[invalidCharacterError, _, 18]
+[invalidCharacterError, _, 20]
