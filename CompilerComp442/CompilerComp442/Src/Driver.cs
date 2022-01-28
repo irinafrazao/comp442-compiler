@@ -25,6 +25,7 @@ namespace CompilerComp442.Src
             using (StreamWriter fileOutTokens = new StreamWriter(Path.Combine(outputDirectory, filenameWithoutExtension + ".outlextokens")),
                                 fileOutErrors = new StreamWriter(Path.Combine(outputDirectory, filenameWithoutExtension + ".outlexerrors")))
             {
+                bool newLineTokenFile = false;
                 int lineNumber = 1;
                 foreach (var line in textLines)
                 {
@@ -35,27 +36,35 @@ namespace CompilerComp442.Src
                         // send line to lexical analyzer
                         response = LexicalAnalyzer.ExtractNextToken(response.RemainderOfInputTextLine, lineNumber);
 
-                        // write token to file here (good tokens and errors)
+                        // write to files
                         if (response != null)
                         {
                             var outputLine = "[" + response.Token.Type + ", " + response.Token.Lexeme
                                 + ", " + response.Token.LineNumber + "]";
 
+                            // write errors in both files
                             if (response.Token.Type.Equals(TokenType.invalidCharacterError))
                             {
-                                fileOutTokens.WriteLine(outputLine);
+                                if (newLineTokenFile) fileOutTokens.WriteLine();
+                                fileOutTokens.Write(outputLine);
+                                    
                                 fileOutErrors.WriteLine(outputLine);
                             }
+                            // write tokens only in the tokens file
                             else
                             {
-                                fileOutTokens.WriteLine(outputLine);
+                                if (newLineTokenFile) fileOutTokens.WriteLine();
+                                fileOutTokens.Write(outputLine);
                             }
+
+                            if (newLineTokenFile) newLineTokenFile = false;
                         }
 
                         //make sure line is entirely tokenized
                     } while (response != null && !string.IsNullOrEmpty(response.RemainderOfInputTextLine));
 
                     lineNumber++;
+                    newLineTokenFile = true;
                 }
             }
         }

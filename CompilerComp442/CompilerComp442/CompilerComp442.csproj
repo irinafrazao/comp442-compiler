@@ -53,9 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Src\Input\lexnegativegrading.src" />
+    <None Include="Src\Input\lexpositivegrading.src" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Src\Input\" />
     <Folder Include="Src\Output\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
