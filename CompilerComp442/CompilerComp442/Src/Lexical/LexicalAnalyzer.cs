@@ -8,12 +8,13 @@ namespace CompilerComp442.Src.Lexical
     public static class LexicalAnalyzer
     {
         // need to move to a file
-        // move line read inside??
-        // need to finalize test cases
-        // fix spaces and tabs and new lines! (or the 2 files from teacher wont run)
         // still need to deal with COMMENTS
+        // fix spaces and tabs and new lines! (or the 2 files from teacher wont run)
 
-        private static Queue<char> pendingCharacters = new Queue<char>();
+        // move line read inside??
+        // make document!
+
+        private static Stack<char> pendingCharacters = new Stack<char>();
         private static int characterCounter = 0;
         private static char currentCharacter;
         private static string lineOfText = "";
@@ -22,15 +23,18 @@ namespace CompilerComp442.Src.Lexical
         {
             // reset static class fields
             lineOfText = text;
-            pendingCharacters = new Queue<char>();
+            pendingCharacters = new Stack<char>();
             characterCounter = 0;
             
-            // replace tabs by space AND lines could be just white spaces
+            // cleanup tab and leading and trailing white spaces
             lineOfText = lineOfText.Replace("/t", " ");
+            lineOfText.Trim();
+
+            // lines could be just white spaces
             if (string.IsNullOrEmpty(lineOfText) || string.IsNullOrWhiteSpace(lineOfText))
             {
                 // final result: new line or tabs or spaces!
-                return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.newLineOrTabOrSpaces);
+                return BuildResponse(pendingCharacters, lineNumber, lineOfText, lineOfText.Length, TokenType.newLineOrTabOrSpaces);
             }
 
             // used to denote the end of the line
@@ -46,23 +50,33 @@ namespace CompilerComp442.Src.Lexical
                 {
                     while (LexicalUtils.IsDigit(currentCharacter))
                     {
-                        MoveToFollowingCharacter();
+                        StackAndMoveToNextCharacter();
                     }
                 }
                 else
                 {
                     // q3: might be an integer or float
-                    MoveToFollowingCharacter();
+                    StackAndMoveToNextCharacter();
                 }
                 
                 // q7: might be a float
                 if (currentCharacter.Equals('.'))
                 {
-                    MoveToFollowingCharacter();
+                    StackAndMoveToNextCharacter();
+
+                    if (!LexicalUtils.IsDigit(currentCharacter))
+                    {
+                        // backtracking 1 character
+                        pendingCharacters.Pop();
+                        characterCounter--;
+
+                        // final result: its an int
+                        return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.intNum);
+                    }
 
                     while (LexicalUtils.IsDigit(currentCharacter))
                     {
-                        MoveToFollowingCharacter();
+                        StackAndMoveToNextCharacter();
 
                         if (currentCharacter.Equals('0'))
                         {
@@ -74,28 +88,28 @@ namespace CompilerComp442.Src.Lexical
                     if (currentCharacter.Equals('e'))
                     {
                         // q12
-                        MoveToFollowingCharacter();
+                        StackAndMoveToNextCharacter();
 
                         // optionaly floats could have plus or minus after the exponent
                         if (currentCharacter.Equals('+') | currentCharacter.Equals('-'))
                         {
-                            MoveToFollowingCharacter();
+                            StackAndMoveToNextCharacter();
                         }
 
                         if (currentCharacter.Equals('0'))
                         {
-                            MoveToFollowingCharacter();
+                            StackAndMoveToNextCharacter();
 
                             // final result q11: its a float!
                             return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
                         }
                         else if (LexicalUtils.IsNonZero(currentCharacter))
                         {
-                            MoveToFollowingCharacter();
+                            StackAndMoveToNextCharacter();
 
                             while (LexicalUtils.IsDigit(currentCharacter))
                             {
-                                MoveToFollowingCharacter();
+                                StackAndMoveToNextCharacter();
                             }
 
                             // final result q11: its a float!
@@ -103,6 +117,10 @@ namespace CompilerComp442.Src.Lexical
                         }
                         else
                         {
+                            // backtracking 1 character
+                            pendingCharacters.Pop();
+                            characterCounter--;
+
                             // final result q11: its a float!
                             return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.floatNum);
                         }
@@ -123,16 +141,16 @@ namespace CompilerComp442.Src.Lexical
             else if (LexicalUtils.IsLetter(currentCharacter))
             {
                 //q1: might be an id
-                MoveToFollowingCharacter();
+                StackAndMoveToNextCharacter();
 
                 // q4, q5, q6 still might be ids
                 while (LexicalUtils.IsLetter(currentCharacter) | LexicalUtils.IsDigit(currentCharacter) | currentCharacter.Equals('_'))
                 {
-                    MoveToFollowingCharacter();
+                    StackAndMoveToNextCharacter();
                 }
 
                 // could be a reserved word
-                var strIdOrReservedWord = new string(pendingCharacters.ToArray<char>());
+                var strIdOrReservedWord = MakeStringOutOfCharStack(pendingCharacters);
                 if (LexicalUtils.IsReservedWord(strIdOrReservedWord))
                 {
                     // final result: its a reserved word!
@@ -150,23 +168,35 @@ namespace CompilerComp442.Src.Lexical
                 // character is part of an operator or punctuation
                 if (LexicalUtils.IsOperatorsOrPunctuation(currentCharacter.ToString()))
                 {
-                    // might be a 2 character operator or punctuation substring
-                    MoveToFollowingCharacter();
+                    StackAndMoveToNextCharacter();
 
+                    var operatorOrPunctuationType = LexicalUtils.GetTokenTypeForOperatorsOrPunctuation
+                        (MakeStringOutOfCharStack(pendingCharacters)).Value;
+
+                    // 1 character operator or punctuation!
+                    var tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, operatorOrPunctuationType);
+
+                    // might be a 2 character operator or punctuation substring
                     if (LexicalUtils.IsOperatorsOrPunctuation(currentCharacter.ToString()))
                     {
-                        MoveToFollowingCharacter();
+                        StackAndMoveToNextCharacter();
+
+                        var operatorTypeToTest = LexicalUtils.GetTokenTypeForOperatorsOrPunctuation
+                            (MakeStringOutOfCharStack(pendingCharacters));
+
+                        if (operatorTypeToTest != null)
+                        {
+                            // 2 character operator or punctuation!
+                            tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, operatorTypeToTest.Value);
+                        }
                     }
 
                     // final result: one or two character operator or punctuation!
-                    var operatorOrPunctuationType = LexicalUtils.GetTokenTypeForOperatorsOrPunctuation
-                        (new string(pendingCharacters.ToArray<char>())).Value;
-
-                    return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, operatorOrPunctuationType);
+                    return tempResponse;
                 }
                 else
                 {
-                    MoveToFollowingCharacter();
+                    StackAndMoveToNextCharacter();
 
                     // final result: error invalid character!
                     return BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.invalidCharacterError);
@@ -174,7 +204,7 @@ namespace CompilerComp442.Src.Lexical
             }
         }
 
-        private static LexicalAnalyzerResponse BuildResponse(Queue<char> pendingCharacters, int lineNumber,
+        private static LexicalAnalyzerResponse BuildResponse(Stack<char> pendingCharacters, int lineNumber,
             string lineOfText, int characterCounter, TokenType tokenType)
         {
             // take out the $ that we added previously to denote the end of the string
@@ -187,7 +217,7 @@ namespace CompilerComp442.Src.Lexical
             {
                 Token = new Token
                 {
-                    Lexeme = new string(pendingCharacters.ToArray<char>()),
+                    Lexeme = MakeStringOutOfCharStack(pendingCharacters),
                     Type = tokenType,
                     LineNumber = lineNumber
                 },
@@ -195,9 +225,16 @@ namespace CompilerComp442.Src.Lexical
             };
         }
 
-        private static void MoveToFollowingCharacter()
+        private static string MakeStringOutOfCharStack(Stack<char> characters)
         {
-            pendingCharacters.Enqueue(currentCharacter);
+            var charArray = characters.ToArray<char>();
+            Array.Reverse(charArray);
+            return new string(charArray);
+        }
+
+        private static void StackAndMoveToNextCharacter()
+        {
+            pendingCharacters.Push(currentCharacter);
             characterCounter++;
             currentCharacter = lineOfText[characterCounter];
         }

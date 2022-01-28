@@ -13,7 +13,7 @@ namespace CompilerComp442.Src
 
             //test case 1 - lexpositivegrading.src
             string inputDirectory = System.IO.Path.GetFullPath(@"..\..\Src\Input\");
-            string filepath = Path.Combine(inputDirectory, "lexicaltest2.src");
+            string filepath = Path.Combine(inputDirectory, "lexpositivegrading.src");
 
             string[] textLines = System.IO.File.ReadAllLines(filepath);
 
