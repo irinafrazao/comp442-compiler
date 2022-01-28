@@ -5,6 +5,10 @@ using System.Linq;
 
 namespace CompilerComp442.Src.Lexical
 {
+    /* Does NOT support:
+     * - multi line block comments
+     * - nested comments
+     */
     public static class LexicalAnalyzer
     {
         private static Stack<char> pendingCharacters = new Stack<char>();
