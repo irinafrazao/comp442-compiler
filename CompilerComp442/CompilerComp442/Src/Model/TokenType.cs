@@ -1,6 +1,6 @@
 ﻿namespace CompilerComp442.Src.Model
 {
-    // Add here also error types?
+    // every type of tokens: errors, comments, id, integer float, operators, punctuations and keywords
     public enum TokenType
     {
         invalidCharacterError,

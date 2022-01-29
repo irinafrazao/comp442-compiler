@@ -6,11 +6,15 @@ using System.Linq;
 namespace CompilerComp442.Src.Lexical
 {
     /* Does NOT support:
-     * - multi line block comments
      * - nested comments
      */
     public static class LexicalAnalyzer
     {
+        // fields for multi line comments
+        private static Stack<char> PendingCharactersForMultiLineComment = new Stack<char>();
+        private static bool MultiLineCommentStarted = false;
+
+        // fields for parsing
         private static Stack<char> pendingCharacters = new Stack<char>();
         private static int characterCounter = 0;
         private static char currentCharacter;
@@ -38,6 +42,61 @@ namespace CompilerComp442.Src.Lexical
 
             // start parsing text
             currentCharacter = lineOfText[characterCounter];
+
+            // multi line comment
+            if (MultiLineCommentStarted && PendingCharactersForMultiLineComment.Count > 0)
+            {
+                MultiLineCommentStarted = true;
+                while (characterCounter < lineOfText.Length - 1)
+                {
+                    if (currentCharacter.Equals('*'))
+                    {
+                        StackAndMoveToNextCharacter();
+
+                        if (currentCharacter.Equals('/'))
+                        {
+                            StackAndMoveToNextCharacter();
+                            MultiLineCommentStarted = false;
+
+                            Stack<char> reversedStack = new Stack<char>();
+                            while (pendingCharacters.Count > 0)
+                            {
+                                reversedStack.Push(pendingCharacters.Pop());
+                            }
+
+                            PendingCharactersForMultiLineComment.Push(' ');
+                            while (reversedStack.Count > 0)
+                            {
+                                PendingCharactersForMultiLineComment.Push(reversedStack.Pop());
+                            }
+
+                            var response = BuildResponse(PendingCharactersForMultiLineComment, lineNumber, lineOfText, characterCounter, TokenType.blockComment);
+                            PendingCharactersForMultiLineComment = new Stack<char>();
+                            return response;
+                        }
+                    }
+                    else
+                    {
+                        StackAndMoveToNextCharacter();
+                    }
+                }
+
+                if (MultiLineCommentStarted)
+                {
+                    Stack<char> reversedStack = new Stack<char>();
+                    while (pendingCharacters.Count > 0)
+                    {
+                        reversedStack.Push(pendingCharacters.Pop());
+                    }
+
+                    PendingCharactersForMultiLineComment.Push(' ');
+                    while (reversedStack.Count > 0)
+                    {
+                        PendingCharactersForMultiLineComment.Push(reversedStack.Pop());
+                    }
+                    return null;
+                }
+            }
 
             if (LexicalUtils.IsNonZero(currentCharacter) | currentCharacter.Equals('0'))
             {
@@ -199,12 +258,12 @@ namespace CompilerComp442.Src.Lexical
                                 }
                                 tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.inlineComment);
                             }
+                            // could be multi line
                             else if(strToCheck.Equals("/*"))
                             {
+                                MultiLineCommentStarted = true;
                                 while (characterCounter < lineOfText.Length - 1)
                                 {
-                                    StackAndMoveToNextCharacter();
-
                                     if (currentCharacter.Equals('*'))
                                     {
                                         StackAndMoveToNextCharacter();
@@ -212,10 +271,30 @@ namespace CompilerComp442.Src.Lexical
                                         if (currentCharacter.Equals('/'))
                                         {
                                             StackAndMoveToNextCharacter();
+                                            MultiLineCommentStarted = false;
                                             tempResponse = BuildResponse(pendingCharacters, lineNumber, lineOfText, characterCounter, TokenType.blockComment);
                                             break;
                                         }
                                     }
+                                    else
+                                    {
+                                        StackAndMoveToNextCharacter();
+                                    }
+                                }
+
+                                if (MultiLineCommentStarted)
+                                {
+                                    Stack<char> reversedStack = new Stack<char>();
+                                    while (pendingCharacters.Count > 0)
+                                    {
+                                        reversedStack.Push(pendingCharacters.Pop());
+                                    }
+
+                                    while (reversedStack.Count > 0)
+                                    {
+                                        PendingCharactersForMultiLineComment.Push(reversedStack.Pop());
+                                    }
+                                    tempResponse = null;
                                 }
                             }
                         }
